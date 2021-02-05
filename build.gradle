@@ -1,6 +1,8 @@
+
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.4.30'
+    id "org.ysb33r.rust.base" version "0.2"
 }
 
 group 'org.dedda'
@@ -10,13 +12,19 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin/'
+    test.java.srcDirs += 'src/test/kotlin/'
+}
+
 jar {
     manifest {
         attributes(
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'org.dedda.cellar.Cellar'
+                'Main-Class': 'org.dedda.cellar.CellarKt'
         )
     }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 dependencies {

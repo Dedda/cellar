@@ -1,6 +1,6 @@
 extern crate jni;
 
-mod grid;
+pub mod grid;
 
 #[cfg(test)]
 mod tests {

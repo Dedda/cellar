@@ -1,6 +1,6 @@
 package org.dedda.cellar.core
 
-object GridCore {
+class GridCore {
 
     external fun contentAt(x: Int, y: Int): String
 
