@@ -2,6 +2,12 @@ package org.dedda.cellar.core
 
 private var coreLoaded = false
 
-fun loadCore() {
-    System.loadLibrary("cellar_core")
+fun getLibraryPath(): String {
+    return System.getProperty("user.dir") + "/core/target/debug/libcellar_core.so"
 }
+
+fun loadCore() {
+    System.load(getLibraryPath())
+}
+
+external fun ping(): String
