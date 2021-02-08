@@ -14,4 +14,8 @@ class FunctionCore {
     }
 
     private external fun _compile(source: String): String
+
+    external fun delete(functionId: String)
+
+    external fun listIds(): Array<String>
 }
