@@ -1,8 +1,8 @@
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
-    id "org.ysb33r.rust.base" version "0.2"
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21-2'
+    id 'org.jetbrains.compose' version '0.3.0-build146'
 }
 
 group 'org.dedda'
@@ -10,6 +10,10 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    jcenter()
+    maven {
+        url 'https://maven.pkg.jetbrains.space/public/p/compose/dev'
+    }
 }
 
 sourceSets {
@@ -17,19 +21,27 @@ sourceSets {
     test.java.srcDirs += 'src/test/kotlin/'
 }
 
-jar {
-    manifest {
-        attributes(
-                'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'org.dedda.cellar.CellarKt'
-        )
+//jar {
+//    manifest {
+//        attributes(
+//                'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+//                'Main-Class': 'org.dedda.cellar.CellarKt'
+//        )
+//    }
+//    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//}
+
+compose.desktop {
+    application {
+        mainClass = 'org.dedda.cellar.CellarKt'
     }
-    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+    implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation(compose.desktop.currentOs)
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testImplementation "org.assertj:assertj-core:3.18.1"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
