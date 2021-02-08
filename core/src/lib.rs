@@ -7,6 +7,8 @@ use jni::objects::JClass;
 use jni::sys::jstring;
 
 pub mod grid;
+pub mod jnitools;
+pub mod func;
 
 #[no_mangle]
 pub extern fn Java_org_dedda_cellar_core_CoreKt_ping(

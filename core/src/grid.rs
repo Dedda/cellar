@@ -4,11 +4,12 @@ use jni::objects::{JClass, JString};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::jnitools::{CLASS_NAME_STRING, jstring_to_string};
+
 mod cell;
 use cell::Cell;
 
 mod row;
-use row::Row;
 
 mod table;
 use table::Table;
@@ -47,7 +48,6 @@ lazy_static! {
 fn create_folder_if_not_exists(id: &str) {
     let mut folders = FOLDERS.lock().unwrap();
     if !folders.contains_key(id) {
-        println!("Creating folder {}", id);
         folders.insert(id.into(), Folder::new());
     }
 }
@@ -62,11 +62,32 @@ pub extern fn Java_org_dedda_cellar_core_GridCore_contentAt(
     y: jint,
 ) -> jstring {
     let folders = FOLDERS.lock().unwrap();
-    let content = folders.get(env.get_string(folder_id).unwrap().to_str().unwrap())
-        .map(|f| f.get_table(env.get_string(table_id).unwrap().to_str().unwrap())).flatten()
+    let folder_id = jstring_to_string(&env, folder_id);
+    let table_id = jstring_to_string(&env, table_id);
+    let content = folders.get(&folder_id)
+        .map(|f| f.get_table(&table_id)).flatten()
         .map(|g| g.get_cell(x as usize, y as usize)).flatten()
-        .map(|c| c.content.clone()).flatten().unwrap_or(String::new());
-    env.new_string(content).expect("Couldn't create Java String!").into_inner()
+        .map(|c| c.get_content().clone()).unwrap_or(String::new());
+    env.new_string(content).unwrap().into_inner()
+}
+
+#[no_mangle]
+pub extern fn Java_org_dedda_cellar_core_GridCore_renderedAt(
+    env: JNIEnv,
+    _class: JClass,
+    folder_id: JString,
+    table_id: JString,
+    x: jint,
+    y: jint,
+) -> jstring {
+    let folders = FOLDERS.lock().unwrap();
+    let folder_id = jstring_to_string(&env, folder_id);
+    let table_id = jstring_to_string(&env, table_id);
+    let content = folders.get(&folder_id)
+        .map(|f| f.get_table(&table_id)).flatten()
+        .map(|g| g.get_cell(x as usize, y as usize)).flatten()
+        .map(|c| c.rendered.clone()).unwrap_or(String::new());
+    env.new_string(content).unwrap().into_inner()
 }
 
 #[no_mangle]
@@ -92,7 +113,7 @@ pub extern fn Java_org_dedda_cellar_core_GridCore_putContentAt(
             t.generate_cells_until(x.clone() as usize, y.clone() as usize);
             t.get_cell_mut(x as usize, y as usize)
         }).flatten()
-        .map(|c| c.content.replace(content));
+        .map(|c| c.update_content(content));
 }
 
 #[no_mangle]
@@ -106,13 +127,13 @@ pub extern fn Java_org_dedda_cellar_core_GridCore_tableIdsForFolderId(
         let keys = Vec::from_iter(folder.tables.keys().cloned());
         let arr = env.new_object_array(
             keys.len() as i32,
-            env.find_class("java/lang/String").unwrap(),
+            env.find_class(CLASS_NAME_STRING).unwrap(),
             env.new_string("").unwrap()).unwrap();
         keys.into_iter().enumerate().for_each(|(index, name)| {
             env.set_object_array_element(arr, index as i32, env.new_string(name).unwrap()).unwrap();
         });
         arr
     } else {
-        env.new_object_array(0, env.find_class("java/lang/String").unwrap(), env.new_string("").unwrap()).unwrap()
+        env.new_object_array(0, env.find_class(CLASS_NAME_STRING).unwrap(), env.new_string("").unwrap()).unwrap()
     }
 }
