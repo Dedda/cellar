@@ -9,6 +9,12 @@ impl Display for ConversionError {
     }
 }
 
+impl From<ConversionError> for String {
+    fn from(err: ConversionError) -> Self {
+        err.to_string()
+    }
+}
+
 #[derive(Clone)]
 pub enum Value {
     Text(String),
@@ -30,6 +36,14 @@ impl Value {
             Float(f)
         } else {
             Text(data)
+        }
+    }
+
+    pub fn is_float(&self) -> bool {
+        if let Value::Float(_) = self {
+            true
+        } else {
+            false
         }
     }
 }

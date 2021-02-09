@@ -5,9 +5,11 @@ use crate::jnitools::{jstring_to_string, CLASS_NAME_STRING};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use crate::grid::DataSource;
+use crate::func::value::Value;
 
 mod bifs;
-pub mod convert;
+pub mod util;
+pub mod value;
 
 trait Evaluate<Src> where Src: DataSource {
     fn eval(&self, data_source: &Src) -> EvalResult;
@@ -20,7 +22,7 @@ pub enum ParseError {
 
 pub type ParseResult = Result<Function, ParseError>;
 
-pub type EvalResult = Result<String, String>;
+pub type EvalResult = Result<Value, String>;
 
 #[derive(Clone)]
 pub struct Function {

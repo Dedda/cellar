@@ -1,6 +1,8 @@
 use crate::func::{Evaluate, EvalResult};
 use crate::grid::DataSource;
-use crate::func::convert::{value_as_int, value_as_float};
+use crate::func::value::Value;
+use std::convert::TryInto;
+use crate::func::util::try_for_all;
 
 pub struct Add<Src> where Src: DataSource {
     arguments: Vec<Box<dyn Evaluate<Src>>>,
@@ -8,29 +10,25 @@ pub struct Add<Src> where Src: DataSource {
 
 impl<Src> Evaluate<Src> for Add<Src> where Src: DataSource {
     fn eval(&self, data_source: &Src) -> EvalResult {
-        let evaluated: Vec<String> = {
-            let evaluated: Vec<EvalResult> = self.arguments.iter().map(|v| v.eval(&data_source)).collect();
-            let mut unpacked = vec![];
-            for element in evaluated {
-                unpacked.push(element?);
-            }
-            unpacked
-        };
-        let mut ints = vec![];
-        let mut floats = vec![];
-        for element in evaluated {
-            if let Ok(int) = value_as_int(&element) {
-                ints.push(int);
-            } else {
-                floats.push(value_as_float(&element)?)
-            }
-        }
-        if floats.is_empty() {
-            Ok(format!("{}", ints.into_iter().sum::<i64>()))
+        let values = try_for_all(self.arguments.iter(), |arg| arg.eval(&data_source))?;
+        if values.iter().find(|v| v.is_float()).is_some() {
+            let floats = try_for_all(values.iter(), |v| v.try_into())?;
+            Ok(Value::Float(floats.iter().sum()))
         } else {
-            let mut converted: Vec<f64> = ints.into_iter().map(|i| i as f64).collect();
-            floats.append(&mut converted);
-            Ok(format!("{}", floats.into_iter().sum::<f64>()))
+            let ints = try_for_all(values.iter(), |v| v.try_into())?;
+            Ok(Value::Int(ints.iter().sum()))
         }
+    }
+}
+
+pub struct ReadCell {
+    x: usize,
+    y: usize,
+}
+
+impl<Src> Evaluate<Src> for ReadCell where Src: DataSource {
+    fn eval(&self, data_source: &Src) -> EvalResult {
+        let data = data_source.read_at(&self.x, &self.y).unwrap_or("".into());
+        Ok(Value::parse(data))
     }
 }
