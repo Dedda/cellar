@@ -4,32 +4,51 @@ use jni::JNIEnv;
 use crate::jnitools::{jstring_to_string, CLASS_NAME_STRING};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use crate::grid::DataSource;
 
+mod bifs;
+pub mod convert;
+
+trait Evaluate<Src> where Src: DataSource {
+    fn eval(&self, data_source: &Src) -> EvalResult;
+}
+
+#[derive(Debug)]
 pub enum ParseError {
 
 }
 
 pub type ParseResult = Result<Function, ParseError>;
 
+pub type EvalResult = Result<String, String>;
+
+#[derive(Clone)]
 pub struct Function {
     bif: bool,
+    pub source: String,
 }
 
 impl Function {
-    pub fn new_bif() -> Self {
+    pub fn new_bif(source: String) -> Self {
         Self {
             bif: true,
+            source,
         }
     }
 
-    pub fn new() -> Self {
+    pub fn new(source: String) -> Self {
         Self {
             bif: false,
+            source,
         }
     }
 
     pub fn is_bif(&self) -> bool {
         self.bif
+    }
+
+    pub fn run<Src>(&self, _data_source: &Src) -> EvalResult where Src: DataSource {
+        Err("Not implemented yet".into())
     }
 }
 
@@ -37,8 +56,13 @@ lazy_static! {
     static ref FUNCTIONS: Arc<Mutex<HashMap<String, Function>>> = Arc::new(Mutex::new(HashMap::new()));
 }
 
-pub fn parse(_src: &str) -> ParseResult {
-    Ok(Function::new())
+pub fn parse(src: &str) -> ParseResult {
+    Ok(Function::new(src.into()))
+}
+
+pub fn find_function(id: &str) -> Option<Function> {
+    let functions = FUNCTIONS.lock().unwrap();
+    functions.get(id).cloned()
 }
 
 #[no_mangle]
